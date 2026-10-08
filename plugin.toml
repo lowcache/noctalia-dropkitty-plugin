@@ -12,7 +12,7 @@ license = "MIT"
 icon = "terminal-2"
 description = "Quake-style drop-down terminal on kitty, with a bar toggle and a finished-command badge."
 dependencies = ["kitty", "jq", "flock", "setsid", "timeout"]
-tags = ["terminal", "productivity", "bar"]
+tags = ["bar", "service", "productivity", "utility", "niri", "hyprland", "sway"]
 
 # ── Opening geometry (live toggles from the helper override these until changed) ──
 [[setting]]

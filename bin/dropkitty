@@ -48,9 +48,11 @@ cfg() {
 }
 
 # --- runtime state ---------------------------------------------------------------
+# hofl: hide_on_focus_loss the running kitty was launched with (settings may have moved since).
 state_reset() {
-    printf 'orient=%s\npos_h=%s\npos_v=%s\nsize=%s\nvisible=%s\n' \
-        "$(cfg orientation)" "$(cfg edge_h)" "$(cfg edge_v)" "$(cfg size)" "$(state_peek visible 0)" >"$STATE.tmp"
+    printf 'orient=%s\npos_h=%s\npos_v=%s\nsize=%s\nvisible=%s\nhofl=%s\n' \
+        "$(cfg orientation)" "$(cfg edge_h)" "$(cfg edge_v)" "$(cfg size)" "$(state_peek visible 0)" \
+        "$(state_peek hofl no)" >"$STATE.tmp"
     mv "$STATE.tmp" "$STATE"
 }
 state_peek() {
@@ -134,12 +136,13 @@ set_visible() {
 launch() { # start the singleton (visible), echo its socket once it answers
     command -v kitten >/dev/null 2>&1 || die "kitten not found (install kitty >= 0.42)"
     state_reset
+    state_set hofl "$(cfg hide_on_focus_loss)"
     local geo g args=(quick-access-terminal --instance-group dropkitty) conf
     geo=$(geometry)
     conf=$(cfg kitty_conf); [ -n "$conf" ] && args+=(-c "$conf")
     args+=(-o "background_opacity=$(cfg opacity)"
            -o "focus_policy=$(cfg focus_policy)"
-           -o "hide_on_focus_loss=$(cfg hide_on_focus_loss)"
+           -o "hide_on_focus_loss=$(state_get hofl)"
            -o "kitty_override=allow_remote_control=socket-only"
            -o "kitty_override=listen_on=unix:$SOCK_BASE"
            -o "kitty_override=watcher=$HERE/dropkitty-watcher.py")
@@ -169,7 +172,7 @@ cmd_settings() {
     local kv k new old_geo new_geo
     new=$(for kv in "$@"; do
         k=${kv%%=*}
-        [[ " $SETTING_KEYS " == *" $k "* && $kv == *=* && $kv != *$'\n'* ]] && printf '%s\n' "$kv"
+        if [[ " $SETTING_KEYS " == *" $k "* && $kv == *=* && $kv != *$'\n'* ]]; then printf '%s\n' "$kv"; fi
     done | sort)
     if [ -f "$SETTINGS" ] && [ "$new" = "$(sort "$SETTINGS")" ]; then return 0; fi
     old_geo=$(for k in $GEOMETRY_KEYS; do cfg "$k"; echo; done)
@@ -185,7 +188,7 @@ cmd_event() {
     case "${1:-}" in
         focus)
             if [ "${2:-}" = 1 ]; then set_visible 1
-            elif [ "$(cfg hide_on_focus_loss)" = yes ]; then set_visible 0; fi ;;
+            elif [ "$(state_peek hofl no)" = yes ]; then set_visible 0; fi ;;
         cmd)
             [ "$(state_peek visible 0)" = 1 ] || notify cmd-finished "${2:-0}" ;;
         exit)

@@ -101,7 +101,7 @@ state() { sed -n "s/^$1=//p" "$XDG_RUNTIME_DIR/dropkitty/state"; }
 }
 
 @test "_settings drops unknown keys and invalid values fall back to defaults" {
-    "$DK" _settings orientation=sideways evil=1 normal_height=500
+    "$DK" _settings orientation=sideways normal_height=500 evil=1
     ! grep -q evil "$XDG_RUNTIME_DIR/dropkitty/settings"
     "$DK" show
     grep -q -- "-o edge=top -o lines=480px" "$LOG"
@@ -128,11 +128,13 @@ state() { sed -n "s/^$1=//p" "$XDG_RUNTIME_DIR/dropkitty/state"; }
     wait_log "all cmd-finished 3"
 }
 
-@test "focus loss hides only with hide_on_focus_loss" {
+@test "focus loss hides only when kitty was launched with hide_on_focus_loss" {
     "$DK" show
+    "$DK" _settings hide_on_focus_loss=yes # not applied to the running kitty
     "$DK" _event focus 0
     [ "$(state visible)" = 1 ]
-    "$DK" _settings hide_on_focus_loss=yes
+    "$DK" restart
+    "$DK" _settings hide_on_focus_loss=no # running kitty still hides on focus loss
     "$DK" _event focus 0
     [ "$(state visible)" = 0 ]
     "$DK" _event focus 1
