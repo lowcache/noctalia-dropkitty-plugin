@@ -183,8 +183,12 @@ cmd_settings() {
     if [ -n "$s" ]; then apply "$s"; fi
 }
 
-# _event KIND [ARG]: reports from the kitty watcher.
+# _event KIND [ARG]: reports from the kitty watcher, which sets DROPKITTY_PID to its kitty's pid.
 cmd_event() {
+    local s; s=$(sock)
+    if [ -n "${DROPKITTY_PID:-}" ] && [ -n "$s" ] && [ "${s##*-}" != "$DROPKITTY_PID" ]; then
+        return 0 # from a kitty that has since been replaced
+    fi
     case "${1:-}" in
         focus)
             if [ "${2:-}" = 1 ]; then set_visible 1
@@ -235,7 +239,13 @@ case "$cmd" in
         if [ -n "$s" ]; then rc "$s" resize-os-window --action=hide >/dev/null || true; set_visible 0; fi ;;
     restart)
         s=$(sock)
-        if [ -n "$s" ]; then kill "${s##*-}" 2>/dev/null || true; rm -f "$s"; fi
+        if [ -n "$s" ]; then
+            # A dying instance still owns the --single-instance group and would swallow the launch.
+            pid=${s##*-}; kill "$pid" 2>/dev/null || true
+            for _ in $(seq 1 50); do kill -0 "$pid" 2>/dev/null || break; sleep 0.1; done
+            kill -0 "$pid" 2>/dev/null && die "old terminal (pid $pid) did not exit"
+            rm -f "$s"
+        fi
         launch >/dev/null ;;
     status) cmd_status ;;
 

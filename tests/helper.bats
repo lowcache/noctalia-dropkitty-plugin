@@ -14,12 +14,15 @@ setup() {
     OUT_W=1920 OUT_H=1200; export OUT_W OUT_H
 
     # kitten: launch creates a live socket named after a real pid; @ calls are logged.
+    # Like kitty: a still-running instance swallows a new launch, and SIGTERM exits slowly.
     cat >"$FAKES/kitten" <<'EOF'
 #!/usr/bin/env bash
 echo "kitten $*" >>"$LOG"
 if [ "$1" = quick-access-terminal ]; then
     for a in "$@"; do case $a in kitty_override=listen_on=unix:*) base=${a#kitty_override=listen_on=unix:} ;; esac; done
-    sleep 300 & pid=$!
+    old=$(cat "$LOG.instance" 2>/dev/null) && kill -0 "$old" 2>/dev/null && exit 0
+    ( trap 'sleep 0.3; kill $s; exit 0' TERM; sleep 300 & s=$!; wait ) & pid=$!
+    echo "$pid" >"$LOG.instance"
     : >"$base-$pid"
 fi
 EOF
@@ -154,6 +157,23 @@ state() { sed -n "s/^$1=//p" "$XDG_RUNTIME_DIR/dropkitty/state"; }
     "$DK" _event exit
     [ "$(state visible)" = 0 ]
     wait_log "all exited"
+}
+
+@test "restart waits for the old kitty to exit" {
+    "$DK" show
+    "$DK" restart
+    run "$DK" status
+    [ "$output" = "alive=1 visible=1" ]
+}
+
+@test "events from a replaced kitty are ignored" {
+    "$DK" show
+    old=$(cat "$LOG.instance")
+    "$DK" restart
+    DROPKITTY_PID=$old "$DK" _event exit
+    [ "$(state visible)" = 1 ]
+    DROPKITTY_PID=$(cat "$LOG.instance") "$DK" _event exit
+    [ "$(state visible)" = 0 ]
 }
 
 @test "hyprland output size is logical and rotation-aware" {

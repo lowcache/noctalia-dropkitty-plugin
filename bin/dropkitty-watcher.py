@@ -11,6 +11,7 @@ def _send(*args: str) -> None:
     try:
         subprocess.Popen(
             [HELPER, "_event", *args],
+            env={**os.environ, "DROPKITTY_PID": str(os.getpid())},
             stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
