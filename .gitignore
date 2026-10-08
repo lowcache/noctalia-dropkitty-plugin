@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+result
+result-*
+.direnv/
+.model/
+.memory/*.md
+.memory/archive/*.md
+.memory/inbox/*
+!.memory/inbox/.gitkeep
