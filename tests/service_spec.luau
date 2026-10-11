@@ -36,6 +36,9 @@ onIpc("shown", "")
 expect("show clears badge", __state.dropkitty.badge, nil)
 onIpc("exited", "")
 expect("exited not alive", __state.dropkitty.alive, false)
+-- kitty can report the shell's `exit` command after the last window closed.
+onIpc("cmd-finished", "0")
+expect("no badge once exited", __state.dropkitty.badge, nil)
 onIpc("bogus", "")
 expect("unknown event ignored", __state.dropkitty.alive, false)
 

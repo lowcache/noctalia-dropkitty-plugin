@@ -124,6 +124,9 @@ function onIpc(event, payload)
   elseif event == "exited" then
     snap.alive, snap.open, snap.badge = false, false, nil
   elseif event == "cmd-finished" then
+    if not snap.alive then
+      return -- kitty can report the shell's `exit` after the last window closed
+    end
     snap.badge = math.floor(num(payload, 0))
   else
     return
