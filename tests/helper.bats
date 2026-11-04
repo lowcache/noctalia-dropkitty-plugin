@@ -201,3 +201,15 @@ state() { sed -n "s/^$1=//p" "$XDG_RUNTIME_DIR/dropkitty/state"; }
     run "$DK" status
     [ "$output" = "alive=0 visible=0" ]
 }
+
+@test "a socket whose pid now belongs to another process is stale" {
+    mkdir -p "$XDG_RUNTIME_DIR/dropkitty"
+    sleep 300 & other=$!
+    : >"$XDG_RUNTIME_DIR/dropkitty/kitty-$other"
+    run "$DK" status
+    [ "$output" = "alive=0 visible=0" ]
+    run "$DK" restart
+    [ "$status" -eq 0 ]
+    kill -0 "$other" # restart must not kill a process that is not ours
+    kill "$other"
+}

@@ -9,6 +9,7 @@ __state = {}
 __watch = {}
 __interval = nil
 __opened_settings = false
+__errors = {}
 
 barWidget = {
   setGlyph = function(g) __glyph = g end,
@@ -28,13 +29,13 @@ noctalia = {
   getConfig = function(k) return __config[k] end,
   getSetting = function(p) return __settings[p] end,
   expandPath = function(p) return (p:gsub("^~", "/home/u")) end,
-  runAsync = function(cmd, cb)
-    table.insert(__runs, { cmd = cmd, cb = cb })
+  runAsync = function(cmd, cb, timeout)
+    table.insert(__runs, { cmd = cmd, cb = cb, timeout = timeout })
     return true
   end,
   setUpdateInterval = function(ms) __interval = ms end,
   openSettings = function() __opened_settings = true end,
-  notifyError = function() end,
+  notifyError = function(title, body) table.insert(__errors, { title = title, body = body }) end,
   state = {
     get = function(k) return __state[k] end,
     set = function(k, v)

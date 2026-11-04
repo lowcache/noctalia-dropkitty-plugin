@@ -69,11 +69,18 @@ state_set() {
 flip() { [ "$1" = "$2" ] && printf '%s' "$3" || printf '%s' "$2"; } # flip CUR A B
 
 # --- kitty ---------------------------------------------------------------------
+# ours PID: alive and started with our socket, so a pid reused after a crash is not ours.
+ours() {
+    kill -0 "$1" 2>/dev/null || return 1
+    [ -d /proc/self ] || return 0 # no procfs: liveness is all we can check
+    tr '\0' ' ' <"/proc/$1/cmdline" 2>/dev/null | grep -qF "listen_on=unix:$SOCK_BASE"
+}
+
 # Newest socket whose kitty is still alive; stale ones (crash, kill -9) are removed.
 sock() {
     local s
     for s in $(ls -t "$SOCK_BASE"-* 2>/dev/null || true); do
-        if kill -0 "${s##*-}" 2>/dev/null; then printf '%s' "$s"; return 0; fi
+        if ours "${s##*-}"; then printf '%s' "$s"; return 0; fi
         rm -f "$s"
     done
 }
