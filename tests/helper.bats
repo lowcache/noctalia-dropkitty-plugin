@@ -9,7 +9,7 @@ setup() {
     : >"$LOG"
     FAKES="$BATS_TEST_TMPDIR/fakes"; mkdir -p "$FAKES"
     export PATH="$FAKES:$PATH"
-    unset NIRI_SOCKET HYPRLAND_INSTANCE_SIGNATURE SWAYSOCK
+    unset NIRI_SOCKET HYPRLAND_INSTANCE_SIGNATURE SWAYSOCK MANGO_INSTANCE_SIGNATURE
     export NIRI_SOCKET=fake
     OUT_W=1920 OUT_H=1200; export OUT_W OUT_H
 
@@ -46,6 +46,15 @@ EOF
     cat >"$FAKES/swaymsg" <<'EOF'
 #!/usr/bin/env bash
 printf '[{"focused":true,"rect":{"width":1280,"height":800}}]\n'
+EOF
+    cat >"$FAKES/mmsg" <<'EOF'
+#!/usr/bin/env bash
+case "$1 $2" in
+    "get focusing-client") printf '{"monitor":"DP-2"}\n' ;;
+    "get cursorpos") printf '{"monitor":"HDMI-A-1"}\n' ;;
+    "get monitor") printf '{"name":"%s","width":1440,"height":900}\n' "$3" ;;
+    *) exit 1 ;;
+esac
 EOF
     chmod +x "$FAKES"/*
     DK="$ROOT/bin/dropkitty"
@@ -188,8 +197,14 @@ state() { sed -n "s/^$1=//p" "$XDG_RUNTIME_DIR/dropkitty/state"; }
     grep -q -- "-o lines=320px" "$LOG"
 }
 
+@test "mango output size comes from the focused client monitor" {
+    unset NIRI_SOCKET; export MANGO_INSTANCE_SIGNATURE=x
+    "$DK" show
+    grep -q -- "-o lines=360px" "$LOG"
+}
+
 @test "unsupported compositor fails loudly" {
-    unset NIRI_SOCKET
+    unset NIRI_SOCKET MANGO_INSTANCE_SIGNATURE
     run "$DK" show
     [ "$status" -eq 2 ]
     [[ "$output" == *"unsupported compositor"* ]]

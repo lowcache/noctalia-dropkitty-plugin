@@ -2,7 +2,7 @@
 
 A Quake-style drop-down terminal for Noctalia, built on kitty's `quick-access-terminal` kitten. One key drops it down and hides it again with your shell session intact. A bar widget shows whether it's open and lights up when a command finishes while it's hidden.
 
-The terminal is a layer-shell panel that kitty draws itself, so it works the same on niri, Hyprland and sway. It doesn't depend on compositor scratchpads, which niri doesn't have.
+The terminal is a layer-shell panel that kitty draws itself, so it works the same on niri, Hyprland, sway and mango. It doesn't depend on compositor scratchpads, which niri doesn't have.
 
 ## Plugin
 
@@ -18,7 +18,7 @@ The terminal is a layer-shell panel that kitty draws itself, so it works the sam
 ## Requirements
 
 - `kitty` 0.42 or newer, which provides `kitten quick-access-terminal`
-- niri, Hyprland or sway. The helper asks `niri`, `hyprctl` or `swaymsg` for the focused output's size.
+- niri, Hyprland, sway or mango. The helper asks `niri`, `hyprctl`, `swaymsg` or `mmsg` for the focused output's size.
 - `jq`, `flock`, `setsid` and `timeout` on `PATH`
 - kitty shell integration, for the finished-command badge. It's on by default for bash, zsh and fish.
 
@@ -56,6 +56,12 @@ bind = SUPER SHIFT, Return, exec, $dropkitty position
 set $dropkitty ~/.local/state/noctalia/plugins/materialized/community/dropkitty/bin/dropkitty
 bindsym $mod+Return exec $dropkitty toggle
 bindsym $mod+Shift+Return exec $dropkitty position
+```
+
+**mango** (`config.conf`):
+```
+bind=SUPER,Return,spawn_shell,~/.local/state/noctalia/plugins/materialized/community/dropkitty/bin/dropkitty toggle
+bind=SUPER+SHIFT,Return,spawn_shell,~/.local/state/noctalia/plugins/materialized/community/dropkitty/bin/dropkitty position
 ```
 
 The helper takes one command:
